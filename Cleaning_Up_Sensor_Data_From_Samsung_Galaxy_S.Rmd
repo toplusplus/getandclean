@@ -1,0 +1,250 @@
+---
+title: "Cleaning Up Sensor Data From Samsung Galaxy S"
+author: '@toplusplus'
+date: "August 4, 2017"
+output: md_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+*Wearable Computing* is no longer science fiction, it is part of our lives, it's a very active topic of research and it's in plain commercial expansion. Companies are racing to develop the most advanced algorithms to attract new users. 
+
+Using data collected from the sensors from the Samsung Galaxy S smartphone, this document explain **step-by-step how to prepare a tidy data set** that can be used for later analysis.
+
+## About the data
+
+The dataset and its detailed description are stored in the UCI Machine Learning Repository as [Human Activity Recognition Using Smartphones Data Set.](http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones#)
+
+As says the _abstract_ in the link above, the dataset is essentially a:  
+
+_"**Human Activity Recognition database** built from the recordings of 30 subjects performing activities of daily living (ADL) while carrying a waist-mounted smartphone with embedded inertial sensors"._
+
+For each record in the dataset it is provided:  
+
+- Triaxial acceleration from the accelerometer (total acceleration) and the estimated body acceleration.
+- Triaxial Angular velocity from the gyroscope.
+- A 561-feature vector with time and frequency domain variables.
+- Its activity label.
+- An identifier of the subject who carried out the experiment. 	
+
+## Get and understand the data
+
+We'll start downloading the data set.
+
+```{r}
+#url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+#download.file(url, "hardataset.zip")
+#unzip("hardataset.zip")
+```
+
+If everything went well, there must be a directory named **UCI HAR Dataset** in our working directory. It contains the following files: 
+
+- 'README.txt': Describes the dataset.
+
+- **'features_info.txt'**: Shows information about the variables used on the feature vector.
+
+- **'features.txt'**: List of all features.
+
+- **'activity_labels.txt'**: Links the class labels with their activity name.
+
+- **'train/X_train.txt'**: Training set.
+
+- **'train/y_train.txt'**: Training labels.
+
+- **'test/X_test.txt'**: Test set.
+
+- **'test/y_test.txt'**: Test labels.
+
+- **'train/subject_train.txt'**: Each row identifies the subject who performed the activity for each window sample. Its range is from 1 to 30. 
+
+- **'test/subject_train.txt'**: Each row identifies the subject who performed the activity for each window sample. Its range is from 1 to 30.
+
+- 'train/Inertial Signals/'
+
+- 'test/Inertial Signals/' 
+
+We'll work with the files marked in **bold**. The directories _'train/Inertial Signals/'_ and  _'test/Inertial Signals/'_ contains files that we're not considering in this workshop. 
+For a detailed description of this dataset please read its **'README.txt'** file.     
+
+As we can see, the data is spread out into several files and it is separated into **training** and **test** data. 
+
+**Our goal is** combines this files and apply some common tasks in **data wrangling** until achieve a required tidy dataset. 
+
+Specifically we will: 
+
+1. Merge the training and the test sets to create one dataset.
+2. Extract only the measurements on the mean and standard deviation for each measurement.
+3. Use descriptive activity names to name the activities in the dataset
+4. Appropriately label the data set with descriptive variable names.
+5. Create an independent tidy dataset with the average of each variable for each activity and each subject.
+
+### Alright, let's do this!
+
+<p align="center"> 
+<img src="http://www.acheronanalytics.com/uploads/9/8/6/3/98636884/editor/51764130_1.jpg?1491762379">
+</p>
+
+## 1. Merge the training and the test sets
+
+Our strategy here will be first create a data frame with the training data and then another one with the test data to finally merge both. 
+
+The _features.txt_ file contains the labels' names of the 561 variables of the **feature vector**, which represents most of our dataset. Since we'll need these labels for both, training and test data, we'll load it first.  
+
+```{r}
+featlabels <- read.table("./UCI HAR Dataset/features.txt", stringsAsFactors = FALSE)  
+str(featlabels)
+```
+
+It seems like the second column of the data frame returned by _read.table_ contains the variable names we are looking for.     
+
+```{r}
+featlabels <- as.vector(featlabels[[2]])
+str(featlabels)
+```
+
+Nice. Now we're ready to load the **training set** and take a look at its structure.  
+
+```{r}
+traindata <- read.table("./UCI HAR Dataset/train/X_train.txt")
+dim(traindata)
+str(traindata[,1:6])
+```
+
+Wow! Our training set have **7352** rows and **561** columns. For the sake of the sexyness of this document, we'll using _str_ function with a small subset of the columns of the dataset.
+
+Now we'll rename the columns of the training set using the vector of feature labels' names formed above. 
+
+```{r}
+colnames(traindata) <- featlabels
+str(traindata[,1:6])
+```
+
+It's time to load and attach the identification of the **subjects** of the experiment and the **activities** to the training set.
+
+```{r}
+subject <- read.table("./UCI HAR Dataset/train/subject_train.txt")
+str(subject)
+subject <- as.vector(subject[[1]])
+str(subject)
+
+activity <- read.table("./UCI HAR Dataset/train/y_train.txt")
+str(activity)
+activity <- factor(activity[[1]])
+str(activity)
+```
+
+Once we have our **subject** and **activity** vector, we'll simply combine/add them to the training set.  
+
+```{r}
+traindata <- cbind(subject, activity, traindata)
+dim(traindata)
+str(traindata[,1:6])
+```
+
+Great! All done for the training set. Let's do the same for the **test set**, but faster!
+
+```{r}
+testdata <- read.table("./UCI HAR Dataset/test/X_test.txt")
+colnames(testdata) <- featlabels
+
+subject <- read.table("./UCI HAR Dataset/test/subject_test.txt")
+subject <- as.vector(subject[[1]])
+
+activity <- read.table("./UCI HAR Dataset/test/y_test.txt")
+activity <- factor(activity[[1]])
+
+testdata <- cbind(subject, activity, testdata)
+dim(testdata)
+str(testdata[,1:6])
+```
+
+And forthwith we merge the training and test set into one dataset named **hardata**. 
+
+```{r}
+hardata <- rbind(traindata, testdata)
+dim(hardata)
+str(hardata[,1:6])
+```
+
+Perfect! One dataset! Let's moving on. 
+
+## 2. Extract only the measurements on the mean and standard deviation for each measurement
+
+To accomplish this, we'll search for matches to the substrings **"mean()"** and **"std()"** within each element of the column names of the dataset. Remember that 561 variables of this dataset correspond with the features labels' names, the other two are _subject_ and _activity_. 
+
+It seems a perfect task for the **grep** function.
+
+```{r}
+hardata <- hardata[, c(1, 2, grep("mean\\(\\)|std\\(\\)", names(hardata)))]
+dim(hardata)
+str(hardata[,1:6])
+```
+
+What a trim! Our dataset columns decreased from **563** to **68**. And we are ready for the next task.
+
+## 3. Use descriptive activity names to name the activities in the data set
+
+There are no names more 'descriptive' for the activities than those listed in the **activity_labels.txt** file. Let's use them!
+
+```{r}
+actlabels <- read.table("./UCI HAR Dataset/activity_labels.txt")
+str(actlabels)
+actlabels <- tolower(as.vector(actlabels[[2]]))
+str(actlabels)
+
+levels(hardata$activity) <- actlabels 
+levels(hardata$activity)
+```
+
+Done! We are on the road!
+
+## 4. Appropriately label the dataset with descriptive variable names.
+
+Since the names of the variables of the dataset are already quite descriptive, we will apply some aesthetic changes to them to convert them into syntactically valid names.
+
+Using the function **gsub** we'll remove any parentheses and substitute any hyphen '-' for an underscore '_'.
+
+```{r}
+names <- gsub("()", "", names(hardata), fixed = TRUE)
+names <- gsub("-", "_", names)
+names(hardata) <- names
+str(hardata[,1:6])
+```
+
+Nice. We are almost done!
+
+## 5. Create an independent tidy dataset with the average of each variable for each activity and each subject.
+
+With the help of the package **dplyr** we can do this with one line of code! 
+
+```{r message = FALSE}
+library(dplyr)
+```
+
+```{r}
+avgdata <- group_by(hardata, activity, subject)  %>% 
+           summarise_all(funs(mean))
+
+head(avgdata[,1:6])
+
+```
+
+Finally, one tidy dataset ready for later analysis. Better we save it!
+
+```{r}
+write.table(avgdata, "avgdata.txt", row.names = FALSE)
+```
+
+## Conclusions
+
+For **subset**, **merge** and **reshape** tasks, in this particular case, inbuilt **base R functions** works fine and keep the things simple.
+
+For **summarize**, the *group_by %>% summarise* approach from the **dplyr** package results very useful.
+
+<hr>
+
+**PD**: The layout (suggested tasks) of this document belongs to the *Course Project* of the [Coursera](https://www.coursera.org) course **'Getting and Cleaning Data'** by **Johns Hopkins University**.
