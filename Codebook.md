@@ -23,7 +23,7 @@ steps:
 
 For a detailed description of the **data wrangling process** applied
 please consult: [Cleaning Up Sensor Data From Samsung Galaxy
-S](https://archive.ics.uci.edu).
+S](https://github.com/toplusplus/getandclean/blob/master/Cleaning_Up_Sensor_Data_From_Samsung_Galaxy_S.md).
 
 The dataset created it's called **avgdata**. It contains **180
 observations** and **68 variables**.
