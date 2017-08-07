@@ -1,8 +1,8 @@
 ## Merges the training and the test sets to create one data set.
 
-url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
-download.file(url, "hardataset.zip")
-unzip("hardataset.zip")
+#url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+#download.file(url, "hardataset.zip")
+#unzip("hardataset.zip")
 featlabels <- read.table("./UCI HAR Dataset/features.txt")  
 str(featlabels)
 featlabels <- as.vector(featlabels[[2]])
